@@ -1,0 +1,121 @@
+import pandas as pd
+df = pd.read_csv('dulieuxettuyendaihoc.csv',
+                 header=0,delimiter=',',encoding='utf-8')
+
+df.rename(columns={'NGAYTHI':'NT',
+                   'DINHHUONGNGHENGHIEP':'NGHE'}, 
+                   inplace=True)
+df
+
+dfKhoiC = df.loc[df['KT'] == 'C']
+dfKhoiC['M1']
+
+dfKhoiC['M1'].describe()
+
+import scipy.stats as stats
+
+stats.ttest_1samp(dfKhoiC['M1'], popmean=4.0)
+
+# Bài tập: Sinh viên kiểm tra xem điểm trung bình của môn thi M2 của khối thi C có bằng 5.7 hay không
+
+# Bài tập: Sinh viên về tự tìm hiểu cách thiết lập mức tin cậy hoặc sai lầm
+# Bài tập: Hãy kiểm tra xem có phải điểm trung bình M3
+# của thí sinh thi khối C có là 6.5 hay không
+# với mức sai lầm là 10%
+
+from statsmodels.stats.weightstats import ztest as ztest
+
+ztest(df['M1'], value=8.0)
+
+#Bài tập: Hãy kiểm tra xem trung bình M2 có bằng 6.7
+
+dfKhoiC = df.loc[df['KT'] == 'C']
+stats.ttest_ind(dfKhoiC['M1'], dfKhoiC['M2'], equal_var=True)
+
+# Bài tập: 
+# Suy diễn xem trung bình M1 có bằng trung bình M3 cho
+# thí sinh thi khối C hay không với mức tin cậy 95%
+
+ztest(df['M1'], df['M2'], value=0)
+
+# Bài tập: Kiểm tra trung bình M2 và M3 có bằng nhau không
+# với mức tin cậy 95%
+
+from scipy.stats.stats import pearsonr
+
+pearsonr(df['M1'], df['M2'])
+
+# Bài tập: Sinh viên làm tương tự cho M1 và M3 có tương quan hay không?
+
+# Bài tập: Sinh viên làm tương tự cho M2 và M3 có tương quan hay không?
+
+import scipy.stats as stats
+
+crosdata = pd.crosstab(df['GT'], [df['NGHE']], rownames=['GT'], colnames=['NGHE'])
+crosdata
+
+odd_ratio, p_value = stats.fisher_exact(crosdata)
+print('odd ratio is : ' + str(odd_ratio))
+print('p_value is : ' + str(p_value))
+
+from scipy.stats import chi2_contingency
+
+crosdata = pd.crosstab(df['KV'], [df['KT']], rownames=['KV'], colnames=['KT'])
+crosdata
+
+import matplotlib.pyplot as plt
+plt.pcolor(crosdata,cmap='RdBu')
+plt.colorbar()
+plt.show()
+
+stat, p, dof, expected = chi2_contingency(crosdata)
+ 
+alpha = 0.05
+print("p value is " + str(p))
+if p <= alpha:
+    print('Dependent (reject H0)')
+else:
+    print('Independent (H0 holds true)')
+
+# Bài tập: GT và KT có mối quan hệ hay không?
+
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+model = ols('M1 ~ GT', data=df).fit()
+aov_table = sm.stats.anova_lm(model, typ=1)
+aov_table
+
+# Bài tập: Điểm M2 có phụ thuộc vào khu vực hay không
+
+# Bài tập: Điểm M3 có phụ thuộc khối thi hay không
+
+model = ols('M1 ~ GT + KV + GT:KV',data=df).fit()
+result = sm.stats.anova_lm(model, type=2)
+print(result)
+
+# Bài tập: Phân tích xem M2 có phụ thuộc trên nhóm KV theo từng loại KT hay không
+
+import statsmodels.api as sm
+X_with_constant = sm.add_constant(df[["M1"]].values)
+y = df[['M3']].values
+result = sm.OLS(y, X_with_constant).fit()
+print(result.summary())
+
+# Bài tập: Giả sử thí sinh có điểm M1 = 6.7 thì hãy dự báo điểm M3 sẽ là bao nhiêu
+# Bài tập: Phân tích sự ảnh hưởng của M2 đến điểm thi M3. Hãy cho biết M2 = 5.7 , hỏi M3 được dự báo là bao nhiêu
+
+import statsmodels.api as sm
+X_with_constant = sm.add_constant(df[["M1","M2"]].values)
+y = df[['M3']].values
+result = sm.OLS(y, X_with_constant).fit()
+print(result.summary())
+
+# Bài tập: Hãy phân tích sự ảnh hưởng của điểm M1, M2 đến M3 trên những thí sinh thi khối A1
+# Cho biết nếu M1 = 6.0 và M2 = 5.5 
+# thì dự đoán học sinh đi thi khối A1 sẽ được điểm M3 là nhiêu
+
+X = df[["M1","M2"]].values
+y = df[['M3']].values
+result = sm.OLS(y, X).fit()
+print(result.summary())
